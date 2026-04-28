@@ -3,6 +3,8 @@ from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_chroma import Chroma
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain.tools import tool
+from langchain_community.document_loaders import PyMuPDFLoader
+import pandas as pd
 
 
 pdf_paths = [
@@ -12,17 +14,13 @@ pdf_paths = [
 
 docs = [PyPDFLoader(path).load() for path in pdf_paths]
 
-
-
-
 docs_list = [item for sublist in docs for item in sublist]
-
+for i, doc in enumerate(docs_list):
+    print(f"Page {i+1} | Chars: {len(doc.page_content)} | Source: {doc.metadata.get('source')}")
 text_splitter = RecursiveCharacterTextSplitter.from_tiktoken_encoder(
-    chunk_size=100, chunk_overlap=50
+    chunk_size=1000, chunk_overlap=200
 )
 doc_splits = text_splitter.split_documents(docs_list)
-
-
 
 embedding_model = HuggingFaceEmbeddings(
     model_name="sentence-transformers/paraphrase-multilingual-mpnet-base-v2"
@@ -58,8 +56,9 @@ def retrieve_from_law_files(query: str) -> str:
     return "\n\n".join([doc.page_content for doc in docs])
 retriever_tool = retrieve_from_law_files
 
-docs = retriever.invoke("ما هي الحقوق الأساسية التي يكفلها الدستور المصري للمواطنين؟")
+docs = retriever.invoke("حق تنظيم الاجتماعات العامة")
+
 for i, doc in enumerate(docs):
-    print(f"--- DOC {i} ---")
-    print(repr(doc.page_content))
-    print(doc.metadata)
+    print(f"--- Doc {i+1} ---")
+    print(doc.page_content)
+    print()
