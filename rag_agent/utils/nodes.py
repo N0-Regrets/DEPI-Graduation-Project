@@ -22,7 +22,7 @@ retriever = vectorstore.as_retriever()
 # --- LLM + Prompt setup ---
 llm = ChatOpenRouter(                                     
     model="nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free",
-    api_key=("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"),
+    api_key=("USE_YOUR_API_KEY"),
     temperature=0
 )
 prompt_ar = ChatPromptTemplate.from_template("""
