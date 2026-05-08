@@ -16,14 +16,12 @@ vectorstore = Chroma(
 
 retriever = vectorstore.as_retriever()
 
-    # Grab your retriever from wherever you defined it
-
 
 # --- LLM + Prompt setup ---
 llm = ChatOpenRouter(                                     
-    model="nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free",
-    api_key=("USE_YOUR_API_KEY"),
-    temperature=0
+    model = "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free",
+    api_key = ("USE YOUR API KEY"),
+    temperature = 0
 )
 prompt_ar = ChatPromptTemplate.from_template("""
 أنت مساعد قانوني متخصص في القانون المصري. أجب على السؤال التالي بناءً على المقتطفات القانونية المقدمة فقط.

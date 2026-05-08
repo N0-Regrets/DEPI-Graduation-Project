@@ -1,11 +1,11 @@
 # DEPI Graduation Project — Egyptian Law RAG Agent
 
-A retrieval-augmented generation (RAG) demo that answers questions about **Egyptian law** using your own PDF corpus, multilingual embeddings, and an LLM routed through OpenRouter. The agent is implemented as a small **LangGraph** pipeline: retrieve relevant chunks from ChromaDB, then generate an Arabic answer grounded in that context.
+A retrieval-augmented generation (RAG) demo that answers questions about **Egyptian law** using a predefined legal corpus, multilingual embeddings, and an LLM routed through OpenRouter. The agent is implemented as a small **LangGraph** pipeline: retrieve relevant chunks from ChromaDB, then generate an Arabic answer grounded in that context.
 
 
-## Roadmap
+## Current Status
 
-The agent is under active development. **Additional LangGraph nodes and capabilities** (e.g. routing, re-ranking, citation formatting, or multi-source retrieval) are **planned**. A **user interface** (web or desktop) is also **likely** so non-developers can query the system more easily. The current codebase is the minimal retrieve → generate baseline.
+The current version uses a simple `retrieve -> generate` flow and is designed around specific legal documents. Future improvements may be added later.
 
 ## Features
 
@@ -52,9 +52,9 @@ The agent is under active development. **Additional LangGraph nodes and capabili
 
 ## Ingesting documents
 
-Before querying, populate Chroma from your PDFs:
+Before querying, populate Chroma from the predefined legal source files configured in `rag_agent/utils/ingest.py`:
 
-1. Place the PDF(s) under `documents/` (paths are listed in `rag_agent/utils/ingest.py`; the script references the Egyptian constitution PDF filename used in that file).
+1. Make sure the configured source files exist in the expected paths.
 2. From the project root, run:
 
    ```bash
@@ -63,7 +63,17 @@ Before querying, populate Chroma from your PDFs:
 
    This creates or refreshes `./chroma_db` with chunked embeddings.
 
-If you add more PDFs, update the `pdf_paths` list in `ingest.py` and run ingest again.
+If source file paths change, update `pdf_paths` in `ingest.py` and run ingestion again.
+
+## Streamlit Demo
+
+Run the web app from the project root:
+
+```bash
+streamlit run app.py
+```
+
+The app provides a chat interface, suggested legal questions, and retrieved context snippets for each answer.
 
 ## Running the agent
 

@@ -33,5 +33,10 @@ for question in questions:
     
     result = app.invoke({"question": question})
     
-    print("Answer:", result["answer"])
+    print(f"\n📄 Retrieved {len(result['documents'])} document(s):")
+    for i, doc in enumerate(result["documents"], 1):
+        print(f"\n  [{i}] Source: {doc.metadata.get('source', 'unknown')}")
+        print(f"       Content: {doc.page_content}...")
+    
+    print("\nAnswer:", result["answer"])
     
