@@ -1,8 +1,12 @@
+import os
+from dotenv import load_dotenv
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_chroma import Chroma
 from langchain_openrouter import ChatOpenRouter
 from langchain_core.prompts import ChatPromptTemplate
 from rag_agent.utils.state import GraphState
+
+load_dotenv()
 
 # --- Retriever setup ---
 embeddings = HuggingFaceEmbeddings(
@@ -11,7 +15,8 @@ embeddings = HuggingFaceEmbeddings(
 
 vectorstore = Chroma(
     persist_directory="./chroma_db",
-    embedding_function=embeddings
+    embedding_function=embeddings,
+    collection_metadata={"hnsw:space": "cosine"}
 )
 
 retriever = vectorstore.as_retriever()
@@ -20,7 +25,7 @@ retriever = vectorstore.as_retriever()
 # --- LLM + Prompt setup ---
 llm = ChatOpenRouter(                                     
     model = "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free",
-    api_key = ("USE YOUR API KEY"),
+    api_key = os.getenv("OPENROUTER_API_KEY2"),
     temperature = 0
 )
 prompt_ar = ChatPromptTemplate.from_template("""
@@ -69,13 +74,12 @@ def reject_node(state: GraphState) -> GraphState:
     return {**state, "answer": "عذراً، أنا متخصص في القانون المصري فقط. يرجى طرح سؤال قانوني متعلق بمصر."}
 
 def retrieve_node(state: GraphState) -> GraphState:
-    pairs = vectorstore.similarity_search_with_relevance_scores(state["question"], k=5)
-    if not pairs or pairs[0][1] < 0.4:
-        return {**state, "documents": [],
-                "answer": "لا تتوفر معلومات كافية في المستندات للإجابة على هذا السؤال."}
-    return {**state, "documents": [doc for doc, _ in pairs]}
+    docs = vectorstore.similarity_search(state["question"], k=5)
+    return {**state, "documents": docs}
 
 def generate_node(state: GraphState) -> GraphState:
+    if not state.get("documents"):
+        return state
     context = "\n\n".join(d.page_content for d in state["documents"])
     chain = prompt_ar | llm
     answer = chain.invoke({"context": context, "question": state["question"]})

@@ -34,7 +34,8 @@ embedding_model = HuggingFaceEmbeddings(
 Chroma.from_documents(
     documents=doc_splits,
     embedding=embedding_model,
-    persist_directory="./chroma_db"
+    persist_directory="./chroma_db",
+    collection_metadata={"hnsw:space": "cosine"}
 )
 
 print("Vector store saved to ./chroma_db")
