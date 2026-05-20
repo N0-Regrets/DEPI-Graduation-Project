@@ -1,17 +1,27 @@
 from langgraph.graph import StateGraph, END
 from rag_agent.utils.state import GraphState
-from rag_agent.utils.nodes import retrieve_node, generate_node
+from rag_agent.utils.nodes import intent_node, reject_node, retrieve_node, generate_node
 from langchain_chroma import Chroma
+
+def _route_intent(state: GraphState) -> str:
+    return state["intent"]
 
 def build_graph():
     graph = StateGraph(GraphState)
 
+    graph.add_node("intent_check", intent_node)
+    graph.add_node("reject", reject_node)
     graph.add_node("retrieve", retrieve_node)
     graph.add_node("generate", generate_node)
 
-    graph.set_entry_point("retrieve")
+    graph.set_entry_point("intent_check")
+    graph.add_conditional_edges("intent_check", _route_intent, {
+        "on_topic": "retrieve",
+        "off_topic": "reject",
+    })
     graph.add_edge("retrieve", "generate")
     graph.add_edge("generate", END)
+    graph.add_edge("reject", END)
 
     return graph.compile()
 

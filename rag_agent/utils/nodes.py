@@ -25,6 +25,7 @@ llm = ChatOpenRouter(
 )
 prompt_ar = ChatPromptTemplate.from_template("""
 أنت مساعد قانوني متخصص في القانون المصري. أجب على السؤال التالي بناءً على المقتطفات القانونية المقدمة فقط.
+إذا كانت المقاطع المتوفرة لا تكفي للإجابة، قل صراحةً: لا تتوفر معلومات كافية ولا تخمّن.
 
 السياق:
 {context}
@@ -49,9 +50,30 @@ Answer (in Arabic):
 """)
 
 # --- Nodes ---
+_INTENT_PROMPT = ChatPromptTemplate.from_template("""
+You are a classifier. Determine if the following question is related to Egyptian law, the Egyptian constitution, or Egyptian legal matters.
+Respond with exactly one word: on_topic or off_topic
+
+Question: {question}
+""")
+
+def intent_node(state: GraphState) -> GraphState:
+    chain = _INTENT_PROMPT | llm
+    result = chain.invoke({"question": state["question"]})
+    intent = result.content.strip().lower()
+    if intent not in ("on_topic", "off_topic"):
+        intent = "on_topic"
+    return {**state, "intent": intent}
+
+def reject_node(state: GraphState) -> GraphState:
+    return {**state, "answer": "عذراً، أنا متخصص في القانون المصري فقط. يرجى طرح سؤال قانوني متعلق بمصر."}
+
 def retrieve_node(state: GraphState) -> GraphState:
-    docs = retriever.invoke(state["question"])
-    return {**state, "documents": docs}
+    pairs = vectorstore.similarity_search_with_relevance_scores(state["question"], k=5)
+    if not pairs or pairs[0][1] < 0.4:
+        return {**state, "documents": [],
+                "answer": "لا تتوفر معلومات كافية في المستندات للإجابة على هذا السؤال."}
+    return {**state, "documents": [doc for doc, _ in pairs]}
 
 def generate_node(state: GraphState) -> GraphState:
     context = "\n\n".join(d.page_content for d in state["documents"])
