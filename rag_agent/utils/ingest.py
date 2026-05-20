@@ -3,12 +3,9 @@ from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_chroma import Chroma
 
-from langchain_community.document_loaders import UnstructuredMarkdownLoader
-
 pdf_paths = [
     "./documents/دستور-جمهورية-مصر-العربية-2019.pdf",
-    
-    
+
 ]
 
 docs = [PyPDFLoader(path).load() for path in pdf_paths]
@@ -33,7 +30,11 @@ for i, chunk in enumerate(doc_splits[:50]):
 embedding_model = HuggingFaceEmbeddings(
     model_name="sentence-transformers/paraphrase-multilingual-mpnet-base-v2"
 )
-
+llm = ChatOpenRouter(                                     
+    model = "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free",
+    api_key = ("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"),
+    temperature = 0
+)
 
 
 Chroma.from_documents(
