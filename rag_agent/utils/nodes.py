@@ -29,10 +29,17 @@ llm = ChatOpenRouter(
     temperature = 0
 )
 prompt_ar = ChatPromptTemplate.from_template("""
-أنت مساعد قانوني متخصص في القانون المصري. أجب على السؤال التالي بناءً على المقتطفات القانونية المقدمة فقط.
-إذا كانت المقاطع المتوفرة لا تكفي للإجابة، قل صراحةً: لا تتوفر معلومات كافية ولا تخمّن.
+أنت مساعد قانوني متخصص في القانون المصري، لديك معرفة عميقة بالدستور المصري، والقانون المدني، وقانون العقوبات، وقانون التجارة، وقانون الإجراءات الجنائية والمدنية.
 
-السياق:
+قواعد يجب الالتزام بها:
+- أجب بناءً على المقتطفات القانونية المقدمة فقط، ولا تعتمد على معلومات خارجها.
+- اذكر رقم المادة القانونية عند الإمكان (مثال: وفقاً للمادة ٥٤ من الدستور...).
+- إذا كان السؤال يتعلق بأكثر من قانون، اذكر المصدر لكل جزء من إجابتك.
+- إذا كانت المقتطفات لا تكفي للإجابة بشكل كامل، صرّح بذلك واذكر ما يمكن الإجابة عنه فقط.
+- لا تخمّن ولا تستنتج أحكاماً غير موجودة في النص.
+- اكتب إجابتك بأسلوب واضح ومنظم.
+
+المقتطفات القانونية:
 {context}
 
 السؤال: {question}
@@ -56,7 +63,9 @@ Answer (in Arabic):
 
 # --- Nodes ---
 _INTENT_PROMPT = ChatPromptTemplate.from_template("""
-You are a classifier. Determine if the following question is related to Egyptian law, the Egyptian constitution, or Egyptian legal matters.
+You are a classifier for a legal assistant specialized in Egyptian law.
+Determine if the question is related to Egyptian law, the Egyptian constitution, legal rights, court procedures, contracts, crimes, or any legal matter in Egypt.
+Greetings, general knowledge questions, and non-legal topics are off_topic.
 Respond with exactly one word: on_topic or off_topic
 
 Question: {question}
