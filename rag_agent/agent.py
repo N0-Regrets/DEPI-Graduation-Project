@@ -41,7 +41,12 @@ for question in questions:
     print(f"Question: {question}")
     print('='*60)
     
-    result = app.invoke({"question": question})
+    result = app.invoke({
+        "question": question,
+        "documents": [],
+        "answer": "",
+        "intent": "",
+    })
     
     print(f"\n📄 Retrieved {len(result['documents'])} document(s):")
     for i, doc in enumerate(result["documents"], 1):

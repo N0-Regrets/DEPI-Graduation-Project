@@ -88,7 +88,7 @@ def retrieve_node(state: GraphState) -> GraphState:
 
 def generate_node(state: GraphState) -> GraphState:
     if not state.get("documents"):
-        return state
+        return {**state, "answer": state.get("answer") or "لا تتوفر معلومات كافية في المستندات للإجابة على هذا السؤال."}
     context = "\n\n".join(d.page_content for d in state["documents"])
     chain = prompt_ar | llm
     answer = chain.invoke({"context": context, "question": state["question"]})
