@@ -73,9 +73,14 @@ if user_input:
 
     with st.chat_message("assistant"):
         with st.spinner("جاري البحث والإجابة..."):
-            result = app.invoke({"question": user_input})
+            result = app.invoke({
+                "question": user_input,
+                "documents": [],
+                "answer": "",
+                "intent": "",
+            })
 
-        answer = result["answer"]
+        answer = result.get("answer") or "حدث خطأ أثناء معالجة سؤالك، يرجى المحاولة مرة أخرى."
         docs = result.get("documents", [])
 
         st.markdown(answer)
