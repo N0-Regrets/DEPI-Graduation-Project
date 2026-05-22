@@ -5,6 +5,7 @@ from langchain_chroma import Chroma
 from langchain_openrouter import ChatOpenRouter
 from langchain_core.prompts import ChatPromptTemplate
 from rag_agent.utils.state import GraphState
+from langchain_openai import AzureChatOpenAI
 
 load_dotenv()
 
@@ -23,11 +24,14 @@ retriever = vectorstore.as_retriever()
 
 
 # --- LLM + Prompt setup ---
-llm = ChatOpenRouter(                                     
-    model = "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free",
-    api_key = os.getenv("OPENROUTER_API_KEY2"),
-    temperature = 0
+llm = AzureChatOpenAI(                                     
+    azure_deployment = "YOUR_AZURE_DEPLOYMENT_NAME",
+    azure_endpoint = "YOUR_AZURE_ENDPOINT_URL",
+    api_key = "YOUR_API_KEY",
+    api_version = "YOUR_API_VERSION",
+    temperature=0
 )
+
 prompt_ar = ChatPromptTemplate.from_template("""
 أنت مساعد قانوني متخصص في القانون المصري. أجب على السؤال التالي بناءً على المقتطفات القانونية المقدمة فقط.
 إذا كانت المقاطع المتوفرة لا تكفي للإجابة، قل صراحةً: لا تتوفر معلومات كافية ولا تخمّن.
