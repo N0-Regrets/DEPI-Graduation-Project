@@ -25,10 +25,10 @@ retriever = vectorstore.as_retriever()
 
 # --- LLM + Prompt setup ---
 llm = AzureChatOpenAI(                                     
-    azure_deployment = "YOUR_AZURE_DEPLOYMENT_NAME",
-    azure_endpoint = "YOUR_AZURE_ENDPOINT_URL",
-    api_key = "YOUR_API_KEY",
-    api_version = "YOUR_API_VERSION",
+    azure_deployment = "gpt-4.1-mini",
+    azure_endpoint = "https://azure-openai-api1256.openai.azure.com/openai/deployments/gpt-4.1-mini/chat/completions?api-version=2025-01-01-preview",
+    api_key = "5JqKdaFCgrp4Kx1pSWKAtUWyXLvlaSITrUXgImio62ZGmzyRvWSAJQQJ99CEACF24PCXJ3w3AAABACOG9hR4",
+    api_version = "2024-12-01-preview",
     temperature=0
 )
 
