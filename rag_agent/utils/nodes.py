@@ -1,8 +1,12 @@
+import os
+from dotenv import load_dotenv
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_chroma import Chroma
 from langchain_openrouter import ChatOpenRouter
 from langchain_core.prompts import ChatPromptTemplate
 from rag_agent.utils.state import GraphState
+
+load_dotenv()
 
 # --- Retriever setup ---
 embeddings = HuggingFaceEmbeddings(
@@ -11,7 +15,8 @@ embeddings = HuggingFaceEmbeddings(
 
 vectorstore = Chroma(
     persist_directory="./chroma_db",
-    embedding_function=embeddings
+    embedding_function=embeddings,
+    collection_metadata={"hnsw:space": "cosine"}
 )
 
 retriever = vectorstore.as_retriever()
@@ -20,11 +25,12 @@ retriever = vectorstore.as_retriever()
 # --- LLM + Prompt setup ---
 llm = ChatOpenRouter(                                     
     model = "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free",
-    api_key = ("USE YOUR API KEY"),
+    api_key = os.getenv("OPENROUTER_API_KEY2"),
     temperature = 0
 )
 prompt_ar = ChatPromptTemplate.from_template("""
 أنت مساعد قانوني متخصص في القانون المصري. أجب على السؤال التالي بناءً على المقتطفات القانونية المقدمة فقط.
+إذا كانت المقاطع المتوفرة لا تكفي للإجابة، قل صراحةً: لا تتوفر معلومات كافية ولا تخمّن.
 
 السياق:
 {context}
@@ -49,11 +55,31 @@ Answer (in Arabic):
 """)
 
 # --- Nodes ---
+_INTENT_PROMPT = ChatPromptTemplate.from_template("""
+You are a classifier. Determine if the following question is related to Egyptian law, the Egyptian constitution, or Egyptian legal matters.
+Respond with exactly one word: on_topic or off_topic
+
+Question: {question}
+""")
+
+def intent_node(state: GraphState) -> GraphState:
+    chain = _INTENT_PROMPT | llm
+    result = chain.invoke({"question": state["question"]})
+    intent = result.content.strip().lower()
+    if intent not in ("on_topic", "off_topic"):
+        intent = "on_topic"
+    return {**state, "intent": intent}
+
+def reject_node(state: GraphState) -> GraphState:
+    return {**state, "answer": "عذراً، أنا متخصص في القانون المصري فقط. يرجى طرح سؤال قانوني متعلق بمصر."}
+
 def retrieve_node(state: GraphState) -> GraphState:
-    docs = retriever.invoke(state["question"])
+    docs = vectorstore.similarity_search(state["question"], k=5)
     return {**state, "documents": docs}
 
 def generate_node(state: GraphState) -> GraphState:
+    if not state.get("documents"):
+        return state
     context = "\n\n".join(d.page_content for d in state["documents"])
     chain = prompt_ar | llm
     answer = chain.invoke({"context": context, "question": state["question"]})

@@ -1,107 +1,115 @@
 # DEPI Graduation Project — Egyptian Law RAG Agent
 
-A retrieval-augmented generation (RAG) demo that answers questions about **Egyptian law** using a predefined legal corpus, multilingual embeddings, and an LLM routed through OpenRouter. The agent is implemented as a small **LangGraph** pipeline: retrieve relevant chunks from ChromaDB, then generate an Arabic answer grounded in that context.
+A retrieval-augmented generation (RAG) agent that answers questions about **Egyptian law** using a legal corpus, multilingual embeddings, and an LLM routed through OpenRouter. The agent is implemented as a **LangGraph** pipeline with intent classification, retrieval, and Arabic answer generation.
 
-
-## Current Status
-
-The current version uses a simple `retrieve -> generate` flow and is designed around specific legal documents. Future improvements may be added later.
+---
 
 ## Features
 
-- **Vector store**: [Chroma](https://www.trychroma.com/) with persisted data under `./chroma_db`
-- **Embeddings**: `sentence-transformers/paraphrase-multilingual-mpnet-base-v2` (supports Arabic and other languages)
-- **Orchestration**: LangGraph — `retrieve` → `generate` → end
-- **LLM**: Configured in code via LangChain’s OpenRouter integration (model name is set in `rag_agent/utils/nodes.py`)
+- **Intent checker** — classifies questions as on-topic (Egyptian law) or off-topic before any retrieval
+- **Vector store** — [Chroma](https://www.trychroma.com/) with cosine similarity, persisted under `./chroma_db`
+- **Embeddings** — `sentence-transformers/paraphrase-multilingual-mpnet-base-v2` (Arabic + multilingual)
+- **6-law corpus** — Constitution, Civil Code, Penal Code, Commercial Law, Criminal Procedures, Civil Procedures
+- **Orchestration** — LangGraph pipeline with conditional routing
+- **LLM** — Configured via LangChain's OpenRouter integration (model set in `rag_agent/utils/nodes.py`)
+- **UI** — Streamlit chat interface with source document previews
 
-## Prerequisites
+---
 
-- Python **3.10+** recommended (project has been run with 3.13)
-- An **[OpenRouter](https://openrouter.ai/) API key** for chat completions
+## Graph Architecture
 
-## Repository layout
+```
+START
+  └─► intent_check
+        ├─► [on_topic]  → retrieve → generate → END
+        └─► [off_topic] → reject              → END
+```
+
+---
+
+## Repository Layout
 
 | Path | Role |
 |------|------|
-| `rag_agent/agent.py` | Builds and compiles the LangGraph; includes sample constitutional questions |
-| `rag_agent/utils/nodes.py` | Embeddings, Chroma retriever, prompts (Arabic / English template), LLM, graph nodes |
-| `rag_agent/utils/state.py` | `GraphState`: question, documents, answer |
-| `rag_agent/utils/ingest.py` | Loads PDF(s), splits text, embeds, writes `./chroma_db` |
-| `documents/` | Source PDFs and reference links (`docs_references.txt`) |
-| `requirements.txt` | Pinned Python dependencies |
+| `app.py` | Streamlit web UI |
+| `rag_agent/agent.py` | Builds and compiles the LangGraph |
+| `rag_agent/utils/nodes.py` | Embeddings, Chroma retriever, prompts, LLM, all graph nodes |
+| `rag_agent/utils/state.py` | `GraphState`: question, documents, answer, intent |
+| `rag_agent/utils/ingest.py` | Loads all 6 PDFs, splits, embeds, writes `./chroma_db` |
+| `documents/` | Source PDFs and `docs_references.txt` |
+| `requirements.txt` | Python dependencies |
+| `.env` | API keys (git-ignored) |
+
+---
+
+## Prerequisites
+
+- Python **3.10+**
+- An **[OpenRouter](https://openrouter.ai/)** API key
+
+---
 
 ## Setup
 
-1. **Clone** the repository and open a terminal in the project root (`DEPI GP`).
+1. **Clone** the repository and open a terminal in the `DEPI-Graduation-Project` folder.
 
-2. **Create and activate a virtual environment** (recommended):
-
+2. **Create and activate a virtual environment:**
    ```bash
    python -m venv .venv
    .venv\Scripts\activate
    ```
 
-3. **Install dependencies**:
-
+3. **Install dependencies:**
    ```bash
    pip install -r requirements.txt
    ```
 
-4. **Configure OpenRouter**  
-   Set your real API key where the project expects it in `rag_agent/utils/nodes.py` (replace the placeholder passed to `ChatOpenRouter`).
-
-## Ingesting documents
-
-Before querying, populate Chroma from the predefined legal source files configured in `rag_agent/utils/ingest.py`:
-
-1. Make sure the configured source files exist in the expected paths.
-2. From the project root, run:
-
-   ```bash
-   python -m rag_agent.utils.ingest
+4. **Configure your API key** — create a `.env` file:
+   ```
+   OPENROUTER_API_KEY=your_key_here
    ```
 
-   This creates or refreshes `./chroma_db` with chunked embeddings.
+---
 
-If source file paths change, update `pdf_paths` in `ingest.py` and run ingestion again.
+## Ingesting Documents
 
-## Streamlit Demo
+Run once to build the vector store from all 6 legal PDFs:
 
-Run the web app from the project root:
+```bash
+python -m rag_agent.utils.ingest
+```
 
+This creates `./chroma_db`. Re-run only if you add or change source documents.
+
+---
+
+## Running the App
+
+**Streamlit UI (recommended):**
 ```bash
 streamlit run app.py
 ```
 
-The app provides a chat interface, suggested legal questions, and retrieved context snippets for each answer.
-
-## Running the agent
-
-From the project root:
-
+**Terminal only:**
 ```bash
 python -m rag_agent.agent
 ```
 
-The bundled script loops over example questions and prints answers. You can adapt `agent.py` to accept interactive input or API calls without changing the core graph.
+---
 
-## How it works (high level)
+## Legal Corpus
 
-```mermaid
-flowchart LR
-  Q[Question] --> R[retrieve]
-  R --> G[generate]
-  G --> A[Answer]
-  DB[(chroma_db)] --> R
-```
+| Law | File |
+|-----|------|
+| Egyptian Constitution 2019 | `دستور-جمهورية-مصر-العربية-2019.pdf` |
+| Civil Code (Law 131/1948) | `القانون رقم 131 لسنة 1948 بإصدار القانون المدني.pdf` |
+| Penal Code (Law 58/1937) | `قانون العقوبات رقم 58 لسنة 1937.pdf` |
+| Commercial Law (Law 17/1999) | `قانون التجارة 17 لسنة 1999 وتعديلاته.pdf` |
+| Criminal Procedures (Law 150/1950) | `قانون الإجراءات الجنائية رقم 150 لسنة 1950.pdf` |
+| Civil Procedures (Law 13/1968) | `قانون رقم ۱۳ لسنة ۱۹٦۸ بإصدار قانون المرافعات المدنية والتجارية.pdf` |
 
-1. **retrieve**: Embedding similarity search over stored chunks.  
-2. **generate**: Prompt fills `context` + `question`; the LLM answers using **only** the provided excerpts (with instructions to admit uncertainty when context is insufficient).
-
-## References
-
-`documents/docs_references.txt` lists public URLs for the constitution and related laws (civil code, penal code, commercial law, etc.). Use these for sourcing official texts when extending the corpus.
+---
 
 ## Disclaimer
 
-This software is for **learning and research**. It does not constitute legal counsel. Always verify answers against official gazettes and qualified professionals.
+This software is for **learning and research** purposes only. It does not constitute legal counsel. Always verify answers against official gazettes and qualified legal professionals.
