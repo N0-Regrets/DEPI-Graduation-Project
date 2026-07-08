@@ -12,6 +12,7 @@ LAWS = [
     ("civil_procedures",    "./documents/قانون رقم ۱۳ لسنة ۱۹٦۸ بإصدار قانون المرافعات المدنية والتجارية وفقاً لآخر تعديل صادر في 10 يولية عام 2024..pdf"),
 ]
 
+
 docs_list = []
 for law_name, path in LAWS:
     for page in PyPDFLoader(path).load():
@@ -21,21 +22,34 @@ for law_name, path in LAWS:
 print(f"Total pages loaded: {len(docs_list)}")
 
 text_splitter = RecursiveCharacterTextSplitter(
-    chunk_size=1000, chunk_overlap=250,
+    chunk_size=1250,
+    chunk_overlap=250,
+    separators = [
+        "مادة",
+        "\n\n",
+         "\n",
+          " ",
+           ""
+    ]
+
 )
 doc_splits = text_splitter.split_documents(docs_list)
 
 print(f"Total chunks: {len(doc_splits)}")
+
+#Ohter embeddings models to try:
+# sentence-transformers/paraphrase-multilingual-mpnet-base-v2
+# BAAI/bge-m3 
 
 embedding_model = HuggingFaceEmbeddings(
     model_name="sentence-transformers/paraphrase-multilingual-mpnet-base-v2"
 )
 
 Chroma.from_documents(
-    documents=doc_splits,
-    embedding=embedding_model,
-    persist_directory="./chroma_db",
-    collection_metadata={"hnsw:space": "cosine"}
+    documents = doc_splits,
+    embedding = embedding_model,
+    persist_directory = "./chroma_db",
 )
 
 print("Vector store saved to ./chroma_db")
+

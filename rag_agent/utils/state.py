@@ -5,4 +5,4 @@ class GraphState(TypedDict):
     question: str
     documents: List[Document]
     answer: str
-    intent: str  # "on_topic" | "off_topic"
+    intent: str  
