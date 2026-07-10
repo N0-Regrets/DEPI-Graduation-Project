@@ -1,20 +1,13 @@
-import os
-from dotenv import load_dotenv
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_chroma import Chroma
 from langchain_openrouter import ChatOpenRouter
 from langchain_core.prompts import ChatPromptTemplate
 from rag_agent.utils.state import GraphState
 from langchain_ollama import ChatOllama
-# from langchain_community.retrievers import BM25Retriever
-# from langchain.retrievers import EnsembleRetriever
 
 
-load_dotenv()
-
-# --- Retriever setup ---
 embeddings = HuggingFaceEmbeddings(
-    model_name="sentence-transformers/paraphrase-multilingual-mpnet-base-v2"
+    model_name="BAAI/bge-m3"
 )
 
 vectorstore = Chroma(
@@ -26,16 +19,8 @@ retriever = vectorstore.as_retriever(
         search_kwargs={"k": 3}
 )
 
-
-
-# llm = ChatOpenRouter(
-#     model="nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free",
-#     api_key="",
-#     temperature=0,
-# )
-
 llm = ChatOllama(
-    model='qwen3.5',
+    model='gemma3:4b',
     reasoning = False,
     temperature = 0
 )
@@ -47,7 +32,7 @@ GENERATION_PROMPT = ChatPromptTemplate.from_template("""
 قواعد صارمة يجب اتباعها دون ذكرها للمستخدم أبدًا:
 - استخدم فقط المعلومات الموجودة في "المعلومات القانونية" أدناه للإجابة.
 - لا تذكر أبدًا عبارات مثل "المقتطفات المقدمة" أو "النص المرفق" أو "السياق" أو "بناءً على المعلومات المتاحة لي" أو أي إشارة إلى أنك تعتمد على نصوص مقدمة لك. أجب مباشرة وكأن هذه هي معرفتك القانونية الخاصة.
-- إذا لم تكن المعلومات المتوفرة كافية للإجابة على السؤال بدقة، فقل بأسلوب طبيعي: "لا تتوفر لدي معلومات كافية للإجابة على هذا السؤال بدقة، وأنصحك بمراجعة محامٍ مختص أو مصدر قانوني رسمي." ولا تحاول التخمين أو الاستنتاج من معلومات غير مؤكدة.
+- إذا لم تكن المعلومات المتوفرة كافية للإجابة على السؤال بدقة، فقل بأسلوب طبيعي: "لا تتوفر لدي معلومات كافية للإجابة على هذا السؤال بدقة." ولا تحاول التخمين أو الاستنتاج من معلومات غير مؤكدة.
 - عند الاستشهاد بمادة قانونية، اذكر رقمها واسم القانون (مثل: "طبقًا للمادة 123 من القانون المدني المصري")، دون الإشارة إلى أنها "مذكورة في النص المرفق".
 
 المعلومات القانونية:
@@ -57,8 +42,6 @@ GENERATION_PROMPT = ChatPromptTemplate.from_template("""
 
 الإجابة:
 """)
-
-
 
 INTENT_CLASSIFIER_PROMPT = ChatPromptTemplate.from_template("""
 دور النظام: مُصنِّف نوايا لمساعد استرجاع معلومات عن القانون المصري (RAG).
@@ -124,7 +107,7 @@ def clarification_node(state: GraphState) -> GraphState:
     return {**state, "answer": "ممكن توضح سؤالك أكتر؟"}
 
 def retrieve_node(state: GraphState) -> GraphState:
-    docs = vectorstore.similarity_search(state["question"], k=5)
+    docs = retriever.invoke(state["question"])
     return {**state, "documents": docs}
 
 def generate_node(state: GraphState) -> GraphState:

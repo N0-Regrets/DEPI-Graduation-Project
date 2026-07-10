@@ -2,14 +2,14 @@ from langchain_community.document_loaders import PyPDFLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_chroma import Chroma
+from collections import defaultdict
+
 
 LAWS = [
-    ("constitution",        "./documents/دستور-جمهورية-مصر-العربية-2019.pdf"),
-    ("civil_code",          "./documents/القانون رقم 131 لسنة 1948 بإصدار القانون المدني.pdf"),
-    ("penal_code",          "./documents/قانون العقوبات رقم 58 لسنة 1937.pdf"),
-    ("commercial_law",      "./documents/قانون التجارة 17 لسنة 1999 وتعديلاته.pdf"),
-    ("criminal_procedures", "./documents/قانون الإجراءات الجنائية رقم 150 لسنة 1950.pdf"),
-    ("civil_procedures",    "./documents/قانون رقم ۱۳ لسنة ۱۹٦۸ بإصدار قانون المرافعات المدنية والتجارية وفقاً لآخر تعديل صادر في 10 يولية عام 2024..pdf"),
+    ("constitution", "./documents/دستور-جمهورية-مصر-العربية-2019.pdf"),
+    ("commercial_law", "./documents/قانون التجارة 17 لسنة 1999 وتعديلاته.pdf"),
+    ("penal_code", "./documents/قانون العقوبات طبقا ألحدث التعديالت بالقانون 54 لسنة 2003م.pdf"),
+    ("civil_procedures", "./documents/قانون رقم ۱۳ لسنة ۱۹٦۸ بإصدار قانون المرافعات المدنية والتجارية وفقاً لآخر تعديل صادر في 10 يولية عام 2024..pdf"),
 ]
 
 
@@ -22,27 +22,17 @@ for law_name, path in LAWS:
 print(f"Total pages loaded: {len(docs_list)}")
 
 text_splitter = RecursiveCharacterTextSplitter(
-    chunk_size=1250,
-    chunk_overlap=250,
-    separators = [
-        "مادة",
-        "\n\n",
-         "\n",
-          " ",
-           ""
-    ]
-
+    chunk_size=1024,
+    chunk_overlap=128,
 )
+
 doc_splits = text_splitter.split_documents(docs_list)
 
 print(f"Total chunks: {len(doc_splits)}")
 
-#Ohter embeddings models to try:
-# sentence-transformers/paraphrase-multilingual-mpnet-base-v2
-# BAAI/bge-m3 
 
 embedding_model = HuggingFaceEmbeddings(
-    model_name="sentence-transformers/paraphrase-multilingual-mpnet-base-v2"
+    model_name="BAAI/bge-m3"
 )
 
 Chroma.from_documents(
@@ -52,4 +42,6 @@ Chroma.from_documents(
 )
 
 print("Vector store saved to ./chroma_db")
+
+
 
